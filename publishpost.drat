@@ -1,0 +1,75 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class PublishPost extends StatefulWidget{
+  @override
+  _PublishPost createState() => new _PublishPost();
+}
+class _PublishPost extends State<PublishPost> {
+  bool isPostLiked = false;
+
+    @override
+    Widget _buildListItem (BuildContext context, DocumentSnapshot document) {
+      List<String> users;
+
+      Widget child;
+      if (document['likedby'].contains('4')) {
+        child = Text('Liked');
+      } else {
+        child = Text('Like');
+      }
+      return ListTile(
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                document['content'],
+                style: Theme
+                    .of(context)
+                    .textTheme
+                    .headline,),
+            ),
+            Container(
+              child: child,
+            ),
+
+          ],
+        ),
+        onTap: () {
+          Firestore.instance.runTransaction((transaction) async {
+            DocumentSnapshot freshSnap = await transaction.get(document.reference);
+            await transaction.update(freshSnap.reference, {
+              'vote': freshSnap['vote'] + 1,
+            });
+            users = ["4"];
+            await transaction.update(freshSnap.reference, {
+              'likedby': FieldValue.arrayUnion(users),
+            });
+          });
+        },
+      );
+    }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: new AppBar(
+        title: Text('Texting Post'),
+      ),
+      body: StreamBuilder(
+          stream: Firestore.instance.collection('/posts').snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const Text('Loading...');
+            return ListView.builder(
+              itemExtent: 80.0,
+              itemCount: snapshot.data.documents.length,
+              itemBuilder: (context, index) =>
+                  _buildListItem(context, snapshot.data.documents[index]),
+            );
+          }),
+    );
+  }
+
+  }
