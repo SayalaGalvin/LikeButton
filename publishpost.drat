@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_notification/commentscreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PublishPost extends StatefulWidget{
@@ -8,19 +9,29 @@ class PublishPost extends StatefulWidget{
   _PublishPost createState() => new _PublishPost();
 }
 class _PublishPost extends State<PublishPost> {
-  bool isPostLiked = false;
 
+  bool isPostLiked = false;
     @override
     Widget _buildListItem (BuildContext context, DocumentSnapshot document) {
-      List<String> users;
-
+    
       Widget child;
-      if (document['likedby'].contains('4')) {
-        child = Text('Liked');
+      if (document['likedby'].contains('5')) {
+        child = Icon(Icons.favorite,color: Colors.teal);
       } else {
-        child = Text('Like');
+        child = Icon(Icons.favorite_border,color: Colors.teal);
       }
+      _commentButtonPressed(){
+        setState((){
+          Navigator.push(context, MaterialPageRoute(builder:(context)=> CommentScreen(context,document.documentID)));
+        });
+      }
+      IconButton comment = IconButton(
+          iconSize: 35.0,
+          icon: Icon(Icons.chat_bubble_outline,color: Colors.grey),
+          onPressed: ()=> _commentButtonPressed(),
+      );
       return ListTile(
+        leading: comment,
         title: Row(
           children: [
             Expanded(
@@ -34,7 +45,6 @@ class _PublishPost extends State<PublishPost> {
             Container(
               child: child,
             ),
-
           ],
         ),
         onTap: () {
@@ -43,7 +53,7 @@ class _PublishPost extends State<PublishPost> {
             await transaction.update(freshSnap.reference, {
               'vote': freshSnap['vote'] + 1,
             });
-            users = ["4"];
+            List<String> users = ["5"];
             await transaction.update(freshSnap.reference, {
               'likedby': FieldValue.arrayUnion(users),
             });
